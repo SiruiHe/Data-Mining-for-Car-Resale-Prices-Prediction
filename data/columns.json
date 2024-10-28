@@ -1,0 +1,73 @@
+{
+    "del_cols": [
+        "listing_id",
+        "original_reg_date",
+        "opc_scheme",
+        "lifespan",
+        "eco_category",
+        "indicative_price"
+    ],
+    "text_cols": [
+        "title",
+        "description",
+        "features",
+        "accessories"
+    ],
+    "date_cols": [
+        "reg_date"
+    ],
+    "numeric_cols": [
+        "manufactured",
+        "curb_weight",
+        "power",
+        "engine_cap",
+        "depreciation",
+        "coe",
+        "road_tax",
+        "dereg_value",
+        "mileage",
+        "omv",
+        "arf",
+        "year",
+        "month"
+    ],
+    "log_cols": [
+        "manufactured",
+        "curb_weight",
+        "power_log",
+        "engine_cap_log",
+        "depreciation_log",
+        "coe",
+        "road_tax_log",
+        "dereg_value_log",
+        "mileage_log",
+        "omv_log",
+        "arf_log",
+        "year",
+        "month"
+    ],
+    "root_cols": [
+        "manufactured",
+        "curb_weight",
+        "power_root",
+        "engine_cap_root",
+        "depreciation_root",
+        "coe",
+        "road_tax_root",
+        "dereg_value_root",
+        "mileage_root",
+        "omv_root",
+        "arf_root",
+        "year",
+        "month"
+    ],
+    "categorical_cols": [
+        "make",
+        "model",
+        "type_of_vehicle",
+        "category",
+        "transmission",
+        "fuel_type",
+        "no_of_owners"
+    ]
+}
