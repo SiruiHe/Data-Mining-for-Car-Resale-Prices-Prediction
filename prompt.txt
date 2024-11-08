@@ -1,0 +1,23 @@
+Based on the following vehicle information, extract standardized numerical features (range: 0 to 1) to assist in predicting the resale price of used cars. If any information is missing or unavailable, assign a default score as specified for each attribute below.
+	•	Title: {title}
+	•	Description: {description}
+	•	Features: {features}
+	•	Accessories: {accessories}
+
+Please assign a score for each of the following attributes, within the range of 0 to 1. If any field is missing or lacks sufficient information, use the specified default score.
+	1.	Brand Popularity Score (0 to 1): Assess the market popularity of the brand in the title. Common brands like “Toyota” and “Honda” should have a score around 0.5; luxury brands like “Mercedes-Benz” should have a score near 0.75; rare brands like “Lamborghini” should score closer to 1. Assign a score of 0.4 if the brand is missing.
+	2.	Model Value Score (0 to 1): Evaluate the model’s rarity and market value based on the title. Common family models (e.g., “Hyundai Avante”) should have a score near 0.2; higher-end models (e.g., “Range Rover”) near 0.7; rare models (e.g., “Lamborghini Huracan”) should score close to 1. Assign a score of 0.3 if the model is missing.
+	3.	Condition Score (0 to 1): Assess the condition of the vehicle based on keywords in the description. Positive terms like “well-maintained” or “pristine condition” should result in scores near 1; if terms like “wear and tear” or “used” are mentioned, the score should be closer to 0.3. Assign a score of 0.5 if the description is missing.
+	4.	Feature Rarity Score (0 to 1): Rate the rarity of the vehicle’s features and accessories. Basic features like “cruise control” should have a score near 0.2; premium features like “carbon ceramic brakes” should score close to 1. Assign a score of 0.3 if features and accessories are missing.
+	5.	Performance Score (0 to 1): Assess the performance level based on specs like engine power, torque, and acceleration. Vehicles with standard power should score near 0.3, while high-performance vehicles with powerful engines should score close to 1. Assign a score of 0.5 if performance specifications are missing.
+	6.	Sentiment Score (0 to 1): Analyze the tone of the description text. Positive sentiments, such as “top-notch comfort” or “superb condition,” should score near 1; negative sentiments, such as “cheaper than renting car,” should score around 0.2. Assign a score of 0.5 if the description is missing.
+
+Output the results in JSON format, structured as follows:
+{{
+  "brand_popularity_score": 0.4,
+  "model_value_score": 0.3,
+  "condition_score": 0.5,
+  "feature_rarity_score": 0.3,
+  "performance_score": 0.5,
+  "sentiment_score": 0.5
+}}

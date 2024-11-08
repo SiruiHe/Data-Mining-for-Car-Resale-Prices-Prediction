@@ -10,3 +10,7 @@ torch
 xgboost
 catboost
 lightgbm
+openai
+optuna
+umap-learn
+transformers
