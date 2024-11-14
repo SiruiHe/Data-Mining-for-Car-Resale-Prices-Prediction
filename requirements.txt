@@ -14,3 +14,4 @@ openai
 optuna
 umap-learn
 transformers
+copy

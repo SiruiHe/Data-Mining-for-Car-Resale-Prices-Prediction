@@ -11,12 +11,12 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 def read_prompt(file_path='prompt.txt'):
-    """读取prompt模板"""
+    """Read prompt template from file"""
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
 def create_text_prompt(row, prompt_template):
-    """为每行数据创建prompt"""
+    """Create prompt for each data row"""
     return prompt_template.format(
         title=row['title'] if pd.notna(row['title']) else '',
         description=row['description'] if pd.notna(row['description']) else '',
@@ -25,7 +25,7 @@ def create_text_prompt(row, prompt_template):
     )
 
 async def get_gpt_response(client, prompt, max_retries=3, sleep_time=5):
-    """异步发送请求到GPT API并处理响应"""
+    """Send async request to GPT API and handle response"""
     for attempt in range(max_retries):
         try:
             response = await client.chat.completions.create(
@@ -42,18 +42,18 @@ async def get_gpt_response(client, prompt, max_retries=3, sleep_time=5):
             try:
                 return json.loads(response_text)
             except json.JSONDecodeError:
-                print(f"JSON解析错误: {response_text}")
+                print(f"JSON parsing error: {response_text}")
                 return None
                 
         except Exception as e:
-            print(f"请求失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+            print(f"Request failed (attempt {attempt + 1}/{max_retries}): {str(e)}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(sleep_time)
             else:
                 return None
 
 async def process_batch_async(df_batch, client, prompt_template, semaphore):
-    """异步处理一批数据"""
+    """Process a batch of data asynchronously"""
     tasks = []
     for _, row in df_batch.iterrows():
         prompt = create_text_prompt(row, prompt_template)
@@ -61,7 +61,7 @@ async def process_batch_async(df_batch, client, prompt_template, semaphore):
     
     results = await tqdm_asyncio.gather(*tasks)
     
-    # 转换为DataFrame并确保listing_id在第一列
+    # Convert to DataFrame and ensure listing_id is the first column
     results_df = pd.DataFrame(results)
     cols = ['listing_id'] + [col for col in results_df.columns if col != 'listing_id']
     results_df = results_df[cols]
@@ -69,8 +69,8 @@ async def process_batch_async(df_batch, client, prompt_template, semaphore):
     return results_df
 
 async def process_single_item(row, client, prompt, semaphore):
-    """处理单个数据项"""
-    async with semaphore:  # 使用信号量控制并发
+    """Process single data item with semaphore control"""
+    async with semaphore:  # Use semaphore to control concurrency
         response = await get_gpt_response(client, prompt)
         
         if response is None:
@@ -86,45 +86,45 @@ async def process_single_item(row, client, prompt, semaphore):
         response['listing_id'] = row['listing_id']
         return response
 
-async def extract_text_features_async(df, batch_size=20, output_file='data/cars_with_text_features.csv'):
-    """异步主函数：处理所有数据并返回新特征"""
-    # 检查是否存在已处理的文件
+async def extract_text_features_async(df, batch_size=20, output_file='data/with_text_features_temp.csv'):
+    """Main async function: Process all data and return new features"""
+    # Check for existing processed file
     processed_ids = set()
     if os.path.exists(output_file):
-        print("发现已存在的处理结果，加载已处理的数据...")
+        print("Found existing results, loading processed data...")
         processed_df = pd.read_csv(output_file)
         processed_ids = set(processed_df['listing_id'])
-        print(f"已处理 {len(processed_ids)} 条记录")
+        print(f"Processed {len(processed_ids)} records")
     
-    # 过滤出未处理的数据
+    # Filter unprocessed data
     df_to_process = df[~df['listing_id'].isin(processed_ids)]
     if len(df_to_process) == 0:
-        print("所有数据都已处理完成！")
+        print("All data has been processed!")
         return pd.read_csv(output_file)
     
-    print(f"需要处理 {len(df_to_process)} 条新记录")
+    print(f"Need to process {len(df_to_process)} new records")
     
-    # 初始化OpenAI客户端
+    # Initialize OpenAI client
     client = AsyncOpenAI()
     
-    # 读取prompt模板
+    # Read prompt template
     prompt_template = read_prompt()
     
-    # 创建信号量控制并发数
-    semaphore = asyncio.Semaphore(10)  # 同时处理10个请求
+    # Create semaphore for concurrency control
+    semaphore = asyncio.Semaphore(10)  # Process 10 requests simultaneously
     
-    # 分批处理数据
+    # Process data in batches
     all_results = []
     for i in range(0, len(df_to_process), batch_size):
         df_batch = df_to_process.iloc[i:i+batch_size]
         batch_results = await process_batch_async(df_batch, client, prompt_template, semaphore)
         all_results.append(batch_results)
         
-        # 合并当前批次结果
+        # Merge current batch results
         current_results_df = pd.concat(all_results, ignore_index=True)
         
         if os.path.exists(output_file):
-            # 如果文件存在，合并新旧结果
+            # If file exists, merge new and old results
             old_df = pd.read_csv(output_file)
             merged_df = pd.concat([
                 old_df,
@@ -132,38 +132,56 @@ async def extract_text_features_async(df, batch_size=20, output_file='data/cars_
             ])
             merged_df.to_csv(output_file, index=False)
         else:
-            # 如果文件不存在，直接保存
+            # If file doesn't exist, save directly
             current_results_df.to_csv(output_file, index=False)
         
-        print(f"已保存批次结果，完成度: {i + len(df_batch)}/{len(df_to_process)}")
+        print(f"Saved batch results, progress: {i + len(df_batch)}/{len(df_to_process)}")
         await asyncio.sleep(0.5)
     
-    # 读取最终结果
+    # Read final results
     final_df = pd.read_csv(output_file)
     
-    # 重命名特征列
+    # Rename feature columns
     feature_cols = [col for col in final_df.columns if col != 'listing_id']
     final_df.columns = ['listing_id'] + ['text_' + col for col in feature_cols]
     
     return final_df
 
 if __name__ == "__main__":
-    # 读取原始数据
-    df = pd.read_csv('data/example_data.csv')
+    import argparse
     
-    # 提取文本特征
-    print("开始提取文本特征...")
-    text_features = asyncio.run(extract_text_features_async(df))
+    # Setup command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'],
+                      help='Mode to run: train or test (default: train)')
+    args = parser.parse_args()
     
-    # 将新特征与原始数据合并
+    # Set input and output file paths based on mode
+    input_file = f'data/{args.mode}.csv'
+    output_file = f'data/with_text_features_{args.mode}.csv'
+    temp_file = f'data/with_text_features_temp_{args.mode}.csv'
+    
+    # Read original data
+    print(f"Reading data from {input_file}...")
+    df = pd.read_csv(input_file)
+    
+    # Extract text features
+    print("Starting text feature extraction...")
+    text_features = asyncio.run(extract_text_features_async(df, output_file=temp_file))
+    
+    # Merge new features with original data
     df_with_features = df.merge(text_features, on='listing_id', how='left')
     
-    # 保存最终结果
-    output_file = 'data/cars_with_text_features_final.csv'
+    # Save final results
     df_with_features.to_csv(output_file, index=False)
-    print(f"特征提取完成！最终结果已保存到 {output_file}")
+    print(f"Feature extraction completed! Final results saved to {output_file}")
     
-    # 打印新特征的统计信息
+    # Remove temporary file
+    if os.path.exists(temp_file):
+        os.remove(temp_file)
+        print(f"Temporary file {temp_file} has been removed")
+    
+    # Print statistics of new features
     feature_cols = [col for col in text_features.columns if col != 'listing_id']
-    print("\n新特征统计信息:")
+    print("\nNew Feature Statistics:")
     print(text_features[feature_cols].describe())
