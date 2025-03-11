@@ -1,4 +1,4 @@
-# CS5228 Project
+# Data Mining for Car Resale Prices Prediction
 
 A data mining project for resale car price prediction, utilizing both traditional ML approaches and neural networks.
 
